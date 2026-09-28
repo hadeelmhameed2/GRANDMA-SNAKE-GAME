@@ -111,10 +111,7 @@ function spawnEntities() {
 
 function drawEntities() {
     foods.forEach(f => {
-        ctx.fillStyle = "#ffffff";
-        ctx.strokeStyle = "#ff3385";
-        ctx.fillRect(f.x, f.y, gridSize, gridSize);
-        ctx.strokeRect(f.x, f.y, gridSize, gridSize);
+        drawCupcake(f.x, f.y);
     });
 
     poisons.forEach(p => {
@@ -123,6 +120,31 @@ function drawEntities() {
         ctx.fillRect(p.x, p.y, gridSize, gridSize);
         ctx.strokeRect(p.x, p.y, gridSize, gridSize);
     });
+}
+
+function drawCupcake(x, y) {
+    const cx = x + gridSize / 2;
+    const cy = y + gridSize / 2;
+
+    ctx.fillStyle = "#d2b48c";
+    ctx.beginPath();
+    ctx.moveTo(cx - 6, cy + 8);
+    ctx.lineTo(cx + 6, cy + 8);
+    ctx.lineTo(cx + 8, cy);
+    ctx.lineTo(cx - 8, cy);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(cx - 5, cy - 1, 5, 0, Math.PI * 2);
+    ctx.arc(cx + 5, cy - 1, 5, 0, Math.PI * 2);
+    ctx.arc(cx, cy - 5, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ff0000";
+    ctx.beginPath();
+    ctx.arc(cx, cy - 9, 3, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 function advanceSnake() {
@@ -167,12 +189,57 @@ function hasGameEnded() {
 }
 
 function drawSnake() {
-    snake.forEach(part => {
-        ctx.fillStyle = "#ff66a3";
-        ctx.strokeStyle = "#ff3385";
-        ctx.fillRect(part.x, part.y, gridSize, gridSize);
-        ctx.strokeRect(part.x, part.y, gridSize, gridSize);
+    snake.forEach((part, index) => {
+        const isHead = index === 0;
+
+        const centerX = part.x + gridSize / 2;
+        const centerY = part.y + gridSize / 2;
+
+        const radius = (gridSize / 2) - 1;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = isHead ? "#ff3385" : "#ff66a3"; // Head is slightly darker pink
+        ctx.fill();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#cc0052";
+        ctx.stroke();
+
+        if (isHead) {
+            drawCartoonFace(centerX, centerY);
+        }
     });
+}
+
+function drawCartoonFace(headX, headY) {
+    let leftEye;
+    let rightEye;
+
+    if (dx > 0) { // Moving Right
+        leftEye = { x: 3, y: -4 };
+        rightEye = { x: 3, y: 4 };
+    } else if (dx < 0) { // Moving Left
+        leftEye = { x: -3, y: -4 };
+        rightEye = { x: -3, y: 4 };
+    } else if (dy > 0) { // Moving Down
+        leftEye = { x: -4, y: 3 };
+        rightEye = { x: 4, y: 3 };
+    } else if (dy < 0) { // Moving Up
+        leftEye = { x: -4, y: -3 };
+        rightEye = { x: 4, y: -3 };
+    } else {
+        leftEye = { x: 4, y: -4 };
+        rightEye = { x: -4, y: -4 };
+    }
+
+    ctx.fillStyle = "white";
+    ctx.beginPath(); ctx.arc(headX + leftEye.x, headY + leftEye.y, 4, 0, 2 * Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(headX + rightEye.x, headY + rightEye.y, 4, 0, 2 * Math.PI); ctx.fill();
+
+    ctx.fillStyle = "black";
+    ctx.beginPath(); ctx.arc(headX + leftEye.x + (dx/20), headY + leftEye.y + (dy/20), 2, 0, 2 * Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(headX + rightEye.x + (dx/20), headY + rightEye.y + (dy/20), 2, 0, 2 * Math.PI); ctx.fill();
 }
 
 function changeDirection(event) {

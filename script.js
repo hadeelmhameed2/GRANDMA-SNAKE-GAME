@@ -1,23 +1,80 @@
-let score = 0;
-
+// [ITE_08] CORE CANVA/GRID CONFIGURATION (unchanged)
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const gridSize = 20;
 
+// [ITE_09] GAME STATE VARIABLES
 let snake = [{ x: 200, y: 200 }];
 let dx = gridSize;
 let dy = 0;
 let foodX;
 let foodY;
+let score = 0;
+let level = 1;
+
+// [ITE_10] STATE CONTROLLER VARIABLES
+let isRunning = false;
+let highScorVal = localStorage.getItem('grandmaSnakeHS') || 0;
 
 document.addEventListener("keydown", changeDirection);
 
-randomFood();
-main();
+// [ITE_11] INITIAL STATE (Start on Main Menu)
+showMainMenu();
 
-function main() {
+// ----------------------------------------------------
+// [ITE_12] STATE MACHINE / UI CONTROLLER FUNCTIONS
+// ----------------------------------------------------
+
+function startGame() {
+    isRunning = true;
+    score = 0;
+    level = 1;
+    snake = [{ x: canvas.width / 2, y: canvas.height / 2 }]; // [NEW] Start center of large board
+    dx = gridSize;
+    dy = 0;
+    document.getElementById("score").innerText = score;
+    document.getElementById("level").innerText = level;
+
+    // Toggle screen visibility
+    document.getElementById("main-menu").classList.add("hidden");
+    document.getElementById("game-over-modal").classList.add("hidden");
+    document.getElementById("game-screen").classList.remove("hidden");
+
+    randomFood();
+    requestAnimationFrame(mainLoop); // [NEW] Using native requestAnimationFrame for large board
+}
+
+function showGameOverModal() {
+    isRunning = false;
+    document.getElementById("game-screen").classList.add("hidden");
+
+    document.getElementById("final-score").innerText = score;
+    // Handle High Score
+    if (score > highScorVal) {
+        highScorVal = score;
+        localStorage.setItem('grandmaSnakeHS', highScorVal);
+    }
+    document.getElementById("high-score").innerText = highScorVal;
+
+    document.getElementById("game-over-modal").classList.remove("hidden");
+}
+
+function showMainMenu() {
+    isRunning = false;
+    document.getElementById("game-screen").classList.add("hidden");
+    document.getElementById("game-over-modal").classList.add("hidden");
+    document.getElementById("main-menu").classList.remove("hidden");
+}
+
+// ----------------------------------------------------
+// [ITE_13] CORE GAME LOGIC (UNCHANGED, modified slightly for mainLoop)
+// ----------------------------------------------------
+
+function mainLoop() {
+    if (!isRunning) return;
+
     if (hasGameEnded()) {
-        alert("Game Over! Refresh to play again.");
+        showGameOverModal();
         return;
     }
 
@@ -26,7 +83,7 @@ function main() {
         drawFood();
         advanceSnake();
         drawSnake();
-        main();
+        requestAnimationFrame(mainLoop);
     }, 100);
 }
 
@@ -67,12 +124,20 @@ function advanceSnake() {
     if (ateFood) {
         score += 10;
         document.getElementById("score").innerText = score;
+
+        // Dynamic Leveling (Optional added value)
+        if (score % 50 === 0) {
+            level++;
+            document.getElementById("level").innerText = level;
+        }
+
         randomFood();
     } else {
         snake.pop();
     }
 }
 
+// [ITE_14] PLACEHOLDER: This function will be replaced entirely in Phase 2
 function drawSnake() {
     snake.forEach(part => {
         ctx.fillStyle = "#ff66a3";
@@ -83,6 +148,8 @@ function drawSnake() {
 }
 
 function changeDirection(event) {
+    if (!isRunning) return;
+
     const goingUp = dy === -gridSize;
     const goingDown = dy === gridSize;
     const goingRight = dx === gridSize;

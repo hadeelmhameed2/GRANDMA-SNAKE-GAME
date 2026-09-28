@@ -2,12 +2,49 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snake Game</title>
+    <title>Grandma Snake Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="scoreBoard">Score: <span id="score">0</span></div>
-<canvas id="gameCanvas" width="400" height="400"></canvas>
+
+<!-- [ITE_01] Main Menu Screen -->
+<div id="main-menu">
+    <div class="menu-content">
+        <h1>GRANDMA SNAKE GAME</h1>
+        <p>Ready to slither?</p>
+        <div class="menu-buttons">
+            <button id="play-button" onclick="startGame()">PLAY</button>
+            <button id="settings-button">SETTINGS</button>
+            <button id="exit-button">EXIT</button>
+        </div>
+    </div>
+</div>
+
+<!-- [ITE_02] Game Screen Area -->
+<div id="game-screen" class="hidden">
+    <div id="hud">
+        <div id="scoreBoard">Score: <span id="score">0</span></div>
+        <div id="levelBoard">Level: <span id="level">1</span></div>
+    </div>
+    <div id="canvas-container">
+        <canvas id="gameCanvas" width="1200" height="800"></canvas>
+    </div>
+</div>
+
+<!-- [ITE_03] Custom Game Over Modal -->
+<div id="game-over-modal" class="modal hidden">
+    <div class="modal-content">
+        <h2>GAME OVER!</h2>
+        <p>Oh dear, dear...</p>
+        <div class="stats-box">
+            <p>Final Score: <span id="final-score">0</span></p>
+            <p>High Score: <span id="high-score">0</span></p>
+        </div>
+        <button onclick="startGame()">PLAY AGAIN?</button>
+        <button onclick="showMainMenu()">MAIN MENU</button>
+    </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>

@@ -1,0 +1,14 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #ffe6f2; /* Very light pastel pink page background */
+}
+
+#gameCanvas {
+    background-color: #ffcce0; /* Soft pink for the game board */
+    border: 4px solid #ff99c2; /* Darker pink border */
+    border-radius: 10px;       /* Soft rounded corners */
+}

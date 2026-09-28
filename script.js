@@ -42,7 +42,7 @@ function startGame() {
     document.getElementById("game-screen").classList.remove("hidden");
 
     spawnEntities();
-    bgMusic.play();
+    playMusicSafely();
     requestAnimationFrame(mainLoop);
 }
 
@@ -83,7 +83,7 @@ function togglePause() {
     if (isPaused) {
         bgMusic.pause();
     } else {
-        bgMusic.play();
+        playMusicSafely(); // <-- Changed from bgMusic.play()
     }
 }
 
@@ -333,3 +333,13 @@ document.getElementById("exit-button").onclick = function() {
         window.location.href = "about:blank";
     }
 };
+
+function playMusicSafely() {
+    let playPromise = bgMusic.play();
+
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log("No music file found. Playing silently!");
+        });
+    }
+}

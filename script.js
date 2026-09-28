@@ -16,6 +16,10 @@ let isRunning = false;
 let isPaused = false;
 let highScorVal = localStorage.getItem('grandmaSnakeHS') || 0;
 
+const bgMusic = new Audio('music.mp3');
+bgMusic.loop = true; // Makes the song repeat automatically
+bgMusic.volume = 0.3; // Lowers the volume so it isn't too loud
+
 document.addEventListener("keydown", changeDirection);
 
 showMainMenu();
@@ -38,11 +42,16 @@ function startGame() {
     document.getElementById("game-screen").classList.remove("hidden");
 
     spawnEntities();
+    bgMusic.play();
     requestAnimationFrame(mainLoop);
 }
 
 function showGameOverModal() {
     isRunning = false;
+
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+
     document.getElementById("game-screen").classList.add("hidden");
 
     document.getElementById("final-score").innerText = score;
@@ -57,6 +66,10 @@ function showGameOverModal() {
 
 function showMainMenu() {
     isRunning = false;
+
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+
     document.getElementById("game-screen").classList.add("hidden");
     document.getElementById("game-over-modal").classList.add("hidden");
     document.getElementById("main-menu").classList.remove("hidden");
@@ -66,6 +79,12 @@ function togglePause() {
     if (!isRunning) return;
     isPaused = !isPaused;
     document.getElementById("pause-button").innerText = isPaused ? "RESUME" : "PAUSE";
+
+    if (isPaused) {
+        bgMusic.pause();
+    } else {
+        bgMusic.play();
+    }
 }
 
 function mainLoop() {

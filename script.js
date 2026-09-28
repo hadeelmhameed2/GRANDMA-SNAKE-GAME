@@ -1,47 +1,60 @@
-// [ITE_08] CORE CANVA/GRID CONFIGURATION (unchanged)
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const gridSize = 20;
 
-// [ITE_09] GAME STATE VARIABLES
 let snake = [{ x: 200, y: 200 }];
 let dx = gridSize;
 let dy = 0;
-let foodX;
-let foodY;
 let score = 0;
 let level = 1;
 
-// [ITE_10] STATE CONTROLLER VARIABLES
+let foods = [];
+let poisons = [];
+let baseSpeed = 120; // Starting milliseconds per frame
+
 let isRunning = false;
 let highScorVal = localStorage.getItem('grandmaSnakeHS') || 0;
 
 document.addEventListener("keydown", changeDirection);
 
-// [ITE_11] INITIAL STATE (Start on Main Menu)
 showMainMenu();
 
-// ----------------------------------------------------
-// [ITE_12] STATE MACHINE / UI CONTROLLER FUNCTIONS
-// ----------------------------------------------------
 
 function startGame() {
     isRunning = true;
     score = 0;
     level = 1;
-    snake = [{ x: canvas.width / 2, y: canvas.height / 2 }]; // [NEW] Start center of large board
+    snake = [{ x: canvas.width / 2, y: canvas.height / 2 }];
     dx = gridSize;
     dy = 0;
     document.getElementById("score").innerText = score;
     document.getElementById("level").innerText = level;
 
-    // Toggle screen visibility
     document.getElementById("main-menu").classList.add("hidden");
     document.getElementById("game-over-modal").classList.add("hidden");
     document.getElementById("game-screen").classList.remove("hidden");
 
-    randomFood();
-    requestAnimationFrame(mainLoop); // [NEW] Using native requestAnimationFrame for large board
+    spawnEntities();
+    requestAnimationFrame(mainLoop);
+}
+
+function mainLoop() {
+    if (!isRunning) return;
+
+    if (hasGameEnded()) {
+        showGameOverModal();
+        return;
+    }
+
+    let currentSpeed = Math.max(40, baseSpeed - (level * 5));
+
+    setTimeout(function onTick() {
+        clearCanvas();
+        drawEntities();
+        advanceSnake();
+        drawSnake();
+        requestAnimationFrame(mainLoop);
+    }, currentSpeed);
 }
 
 function showGameOverModal() {
@@ -49,7 +62,6 @@ function showGameOverModal() {
     document.getElementById("game-screen").classList.add("hidden");
 
     document.getElementById("final-score").innerText = score;
-    // Handle High Score
     if (score > highScorVal) {
         highScorVal = score;
         localStorage.setItem('grandmaSnakeHS', highScorVal);
@@ -66,78 +78,94 @@ function showMainMenu() {
     document.getElementById("main-menu").classList.remove("hidden");
 }
 
-// ----------------------------------------------------
-// [ITE_13] CORE GAME LOGIC (UNCHANGED, modified slightly for mainLoop)
-// ----------------------------------------------------
 
-function mainLoop() {
-    if (!isRunning) return;
-
-    if (hasGameEnded()) {
-        showGameOverModal();
-        return;
-    }
-
-    setTimeout(function onTick() {
-        clearCanvas();
-        drawFood();
-        advanceSnake();
-        drawSnake();
-        requestAnimationFrame(mainLoop);
-    }, 100);
-}
 
 function clearCanvas() {
     ctx.fillStyle = "#ffcce0";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function hasGameEnded() {
-    for (let i = 4; i < snake.length; i++) {
-        if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+function getRandomPosition() {
+    return {
+        x: Math.round((Math.random() * (canvas.width - gridSize)) / gridSize) * gridSize,
+        y: Math.round((Math.random() * (canvas.height - gridSize)) / gridSize) * gridSize
+    };
+}
+
+function spawnEntities() {
+    foods = [];
+    poisons = [];
+
+    let foodCount = 1 + Math.floor(level / 3);
+    for (let i = 0; i < foodCount; i++) {
+        foods.push(getRandomPosition());
     }
-    const hitLeftWall = snake[0].x < 0;
-    const hitRightWall = snake[0].x >= canvas.width;
-    const hitTopWall = snake[0].y < 0;
-    const hitBottomWall = snake[0].y >= canvas.height;
 
-    return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
+    if (level >= 15) {
+        let poisonCount = level - 14; // 1 at lvl 15, 2 at lvl 16, etc.
+        for (let i = 0; i < poisonCount; i++) {
+            poisons.push(getRandomPosition());
+        }
+    }
 }
 
-function randomFood() {
-    foodX = Math.round((Math.random() * (canvas.width - gridSize)) / gridSize) * gridSize;
-    foodY = Math.round((Math.random() * (canvas.height - gridSize)) / gridSize) * gridSize;
-}
+function drawEntities() {
+    foods.forEach(f => {
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#ff3385";
+        ctx.fillRect(f.x, f.y, gridSize, gridSize);
+        ctx.strokeRect(f.x, f.y, gridSize, gridSize);
+    });
 
-function drawFood() {
-    ctx.fillStyle = "#ffffff";
-    ctx.strokeStyle = "#ff3385";
-    ctx.fillRect(foodX, foodY, gridSize, gridSize);
-    ctx.strokeRect(foodX, foodY, gridSize, gridSize);
+    poisons.forEach(p => {
+        ctx.fillStyle = "#800080";
+        ctx.strokeStyle = "#000000";
+        ctx.fillRect(p.x, p.y, gridSize, gridSize);
+        ctx.strokeRect(p.x, p.y, gridSize, gridSize);
+    });
 }
 
 function advanceSnake() {
     const head = { x: snake[0].x + dx, y: snake[0].y + dy };
     snake.unshift(head);
 
-    const ateFood = snake[0].x === foodX && snake[0].y === foodY;
-    if (ateFood) {
+    let ateFoodIndex = foods.findIndex(f => f.x === head.x && f.y === head.y);
+
+    if (ateFoodIndex !== -1) {
         score += 10;
         document.getElementById("score").innerText = score;
 
-        // Dynamic Leveling (Optional added value)
         if (score % 50 === 0) {
             level++;
             document.getElementById("level").innerText = level;
+            spawnEntities();
+        } else {
+            foods.splice(ateFoodIndex, 1);
+            foods.push(getRandomPosition());
         }
-
-        randomFood();
     } else {
         snake.pop();
     }
 }
 
-// [ITE_14] PLACEHOLDER: This function will be replaced entirely in Phase 2
+function hasGameEnded() {
+    // 1. Self collision
+    for (let i = 4; i < snake.length; i++) {
+        if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+    }
+
+    // 2. Wall collision
+    const hitLeft = snake[0].x < 0;
+    const hitRight = snake[0].x >= canvas.width;
+    const hitTop = snake[0].y < 0;
+    const hitBottom = snake[0].y >= canvas.height;
+
+    // 3. Poison collision
+    const hitPoison = poisons.some(p => p.x === snake[0].x && p.y === snake[0].y);
+
+    return hitLeft || hitRight || hitTop || hitBottom || hitPoison;
+}
+
 function drawSnake() {
     snake.forEach(part => {
         ctx.fillStyle = "#ff66a3";
@@ -172,3 +200,18 @@ function changeDirection(event) {
         dy = gridSize;
     }
 }
+
+document.getElementById("settings-button").onclick = function() {
+    document.getElementById("settings-modal").classList.remove("hidden");
+};
+
+function closeSettings() {
+    document.getElementById("settings-modal").classList.add("hidden");
+}
+
+document.getElementById("exit-button").onclick = function() {
+    if (confirm("Are you sure you want to exit the game?")) {
+        window.close(); // Works if the tab was opened via script
+        window.location.href = "about:blank"; // Fallback for standard tabs
+    }
+};

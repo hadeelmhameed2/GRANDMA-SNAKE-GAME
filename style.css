@@ -164,3 +164,10 @@ button:hover {
     color: #ff66a3;
     margin: 5px 0;
 }
+
+#pause-button {
+    padding: 5px 20px;
+    font-size: 1rem;
+    height: 40px;
+    align-self: center;
+}

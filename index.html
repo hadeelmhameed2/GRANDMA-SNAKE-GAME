@@ -22,6 +22,7 @@
 <div id="game-screen" class="hidden">
     <div id="hud">
         <div id="scoreBoard">Score: <span id="score">0</span></div>
+        <button id="pause-button" onclick="togglePause()">PAUSE</button>
         <div id="levelBoard">Level: <span id="level">1</span></div>
     </div>
     <div id="canvas-container">
@@ -38,6 +39,8 @@
         <button onclick="closeSettings()">BACK</button>
     </div>
 </div>
+
+<!-- Game Over Modal -->
 <div id="game-over-modal" class="modal hidden">
     <div class="modal-content">
         <h2>GAME OVER!</h2>

@@ -10,25 +10,28 @@ let level = 1;
 
 let foods = [];
 let poisons = [];
-let baseSpeed = 120; // Starting milliseconds per frame
+let baseSpeed = 120;
 
 let isRunning = false;
+let isPaused = false;
 let highScorVal = localStorage.getItem('grandmaSnakeHS') || 0;
 
 document.addEventListener("keydown", changeDirection);
 
 showMainMenu();
 
-
 function startGame() {
     isRunning = true;
+    isPaused = false;
     score = 0;
     level = 1;
     snake = [{ x: canvas.width / 2, y: canvas.height / 2 }];
     dx = gridSize;
     dy = 0;
+
     document.getElementById("score").innerText = score;
     document.getElementById("level").innerText = level;
+    document.getElementById("pause-button").innerText = "PAUSE";
 
     document.getElementById("main-menu").classList.add("hidden");
     document.getElementById("game-over-modal").classList.add("hidden");
@@ -36,25 +39,6 @@ function startGame() {
 
     spawnEntities();
     requestAnimationFrame(mainLoop);
-}
-
-function mainLoop() {
-    if (!isRunning) return;
-
-    if (hasGameEnded()) {
-        showGameOverModal();
-        return;
-    }
-
-    let currentSpeed = Math.max(40, baseSpeed - (level * 5));
-
-    setTimeout(function onTick() {
-        clearCanvas();
-        drawEntities();
-        advanceSnake();
-        drawSnake();
-        requestAnimationFrame(mainLoop);
-    }, currentSpeed);
 }
 
 function showGameOverModal() {
@@ -78,11 +62,55 @@ function showMainMenu() {
     document.getElementById("main-menu").classList.remove("hidden");
 }
 
+function togglePause() {
+    if (!isRunning) return;
+    isPaused = !isPaused;
+    document.getElementById("pause-button").innerText = isPaused ? "RESUME" : "PAUSE";
+}
 
+function mainLoop() {
+    if (!isRunning) return;
+
+    if (hasGameEnded()) {
+        showGameOverModal();
+        return;
+    }
+
+    if (isPaused) {
+        requestAnimationFrame(mainLoop);
+        return;
+    }
+
+    let currentSpeed = Math.max(40, baseSpeed - (level * 5));
+
+    setTimeout(function onTick() {
+        if (!isPaused && isRunning) {
+            clearCanvas();
+            drawEntities();
+            advanceSnake();
+            drawSnake();
+        }
+        requestAnimationFrame(mainLoop);
+    }, currentSpeed);
+}
 
 function clearCanvas() {
     ctx.fillStyle = "#ffcce0";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function hasGameEnded() {
+    for (let i = 4; i < snake.length; i++) {
+        if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+    }
+
+    const hitLeft = snake[0].x < 0;
+    const hitRight = snake[0].x >= canvas.width;
+    const hitTop = snake[0].y < 0;
+    const hitBottom = snake[0].y >= canvas.height;
+    const hitPoison = poisons.some(p => p.x === snake[0].x && p.y === snake[0].y);
+
+    return hitLeft || hitRight || hitTop || hitBottom || hitPoison;
 }
 
 function getRandomPosition() {
@@ -101,8 +129,8 @@ function spawnEntities() {
         foods.push(getRandomPosition());
     }
 
-    if (level >= 15) {
-        let poisonCount = level - 14; // 1 at lvl 15, 2 at lvl 16, etc.
+    if (level >= 5) {
+        let poisonCount = level - 4;
         for (let i = 0; i < poisonCount; i++) {
             poisons.push(getRandomPosition());
         }
@@ -115,10 +143,7 @@ function drawEntities() {
     });
 
     poisons.forEach(p => {
-        ctx.fillStyle = "#800080";
-        ctx.strokeStyle = "#000000";
-        ctx.fillRect(p.x, p.y, gridSize, gridSize);
-        ctx.strokeRect(p.x, p.y, gridSize, gridSize);
+        drawPotion(p.x, p.y);
     });
 }
 
@@ -147,6 +172,32 @@ function drawCupcake(x, y) {
     ctx.fill();
 }
 
+function drawPotion(x, y) {
+    const cx = x + gridSize / 2;
+    const cy = y + gridSize / 2;
+
+    ctx.fillStyle = "#9900cc";
+    ctx.beginPath();
+    ctx.arc(cx, cy + 4, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#4d0066";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillRect(cx - 3, cy - 4, 6, 6);
+    ctx.strokeRect(cx - 3, cy - 4, 6, 6);
+
+    ctx.fillStyle = "#8b4513";
+    ctx.fillRect(cx - 2, cy - 7, 4, 3);
+
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy + 4, 3, Math.PI, Math.PI * 1.5);
+    ctx.stroke();
+}
+
 function advanceSnake() {
     const head = { x: snake[0].x + dx, y: snake[0].y + dy };
     snake.unshift(head);
@@ -170,36 +221,17 @@ function advanceSnake() {
     }
 }
 
-function hasGameEnded() {
-    // 1. Self collision
-    for (let i = 4; i < snake.length; i++) {
-        if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
-    }
-
-    // 2. Wall collision
-    const hitLeft = snake[0].x < 0;
-    const hitRight = snake[0].x >= canvas.width;
-    const hitTop = snake[0].y < 0;
-    const hitBottom = snake[0].y >= canvas.height;
-
-    // 3. Poison collision
-    const hitPoison = poisons.some(p => p.x === snake[0].x && p.y === snake[0].y);
-
-    return hitLeft || hitRight || hitTop || hitBottom || hitPoison;
-}
-
 function drawSnake() {
     snake.forEach((part, index) => {
         const isHead = index === 0;
 
         const centerX = part.x + gridSize / 2;
         const centerY = part.y + gridSize / 2;
-
         const radius = (gridSize / 2) - 1;
 
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.fillStyle = isHead ? "#ff3385" : "#ff66a3"; // Head is slightly darker pink
+        ctx.fillStyle = isHead ? "#ff3385" : "#ff66a3";
         ctx.fill();
 
         ctx.lineWidth = 2;
@@ -216,16 +248,16 @@ function drawCartoonFace(headX, headY) {
     let leftEye;
     let rightEye;
 
-    if (dx > 0) { // Moving Right
+    if (dx > 0) {
         leftEye = { x: 3, y: -4 };
         rightEye = { x: 3, y: 4 };
-    } else if (dx < 0) { // Moving Left
+    } else if (dx < 0) {
         leftEye = { x: -3, y: -4 };
         rightEye = { x: -3, y: 4 };
-    } else if (dy > 0) { // Moving Down
+    } else if (dy > 0) {
         leftEye = { x: -4, y: 3 };
         rightEye = { x: 4, y: 3 };
-    } else if (dy < 0) { // Moving Up
+    } else if (dy < 0) {
         leftEye = { x: -4, y: -3 };
         rightEye = { x: 4, y: -3 };
     } else {
@@ -243,7 +275,7 @@ function drawCartoonFace(headX, headY) {
 }
 
 function changeDirection(event) {
-    if (!isRunning) return;
+    if (!isRunning || isPaused) return;
 
     const goingUp = dy === -gridSize;
     const goingDown = dy === gridSize;
@@ -278,7 +310,7 @@ function closeSettings() {
 
 document.getElementById("exit-button").onclick = function() {
     if (confirm("Are you sure you want to exit the game?")) {
-        window.close(); // Works if the tab was opened via script
-        window.location.href = "about:blank"; // Fallback for standard tabs
+        window.close();
+        window.location.href = "about:blank";
     }
 };

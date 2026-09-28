@@ -1,3 +1,5 @@
+let score = 0;
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const gridSize = 20;
@@ -14,6 +16,11 @@ randomFood();
 main();
 
 function main() {
+    if (hasGameEnded()) {
+        alert("Game Over! Refresh to play again.");
+        return;
+    }
+
     setTimeout(function onTick() {
         clearCanvas();
         drawFood();
@@ -26,6 +33,18 @@ function main() {
 function clearCanvas() {
     ctx.fillStyle = "#ffcce0";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function hasGameEnded() {
+    for (let i = 4; i < snake.length; i++) {
+        if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+    }
+    const hitLeftWall = snake[0].x < 0;
+    const hitRightWall = snake[0].x >= canvas.width;
+    const hitTopWall = snake[0].y < 0;
+    const hitBottomWall = snake[0].y >= canvas.height;
+
+    return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
 }
 
 function randomFood() {
@@ -46,6 +65,8 @@ function advanceSnake() {
 
     const ateFood = snake[0].x === foodX && snake[0].y === foodY;
     if (ateFood) {
+        score += 10;
+        document.getElementById("score").innerText = score;
         randomFood();
     } else {
         snake.pop();
